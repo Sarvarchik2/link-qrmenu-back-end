@@ -20,21 +20,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
         model = Restaurant
         fields = ['id', 'owner', 'name', 'description', 'contacts', 'address', 'logo', 'slug']
 
-class CategorySerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для категории меню.
-    Пример:
-    {
-        "id": 1,
-        "restaurant": 1,
-        "parent": null,
-        "name": "Напитки"
-    }
-    """
-    class Meta:
-        model = Category
-        fields = ['id', 'restaurant', 'parent', 'name']
-
 class MenuItemSerializer(serializers.ModelSerializer):
     """
     Сериализатор для блюда.
@@ -52,4 +37,21 @@ class MenuItemSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = MenuItem
-        fields = ['id', 'category', 'name', 'description', 'price', 'photo', 'is_hit', 'is_vegetarian'] 
+        fields = ['id', 'category', 'name', 'description', 'price', 'photo', 'is_hit', 'is_vegetarian']
+
+class CategorySerializer(serializers.ModelSerializer):
+    items = MenuItemSerializer(many=True, read_only=True)
+
+    """
+    Сериализатор для категории меню.
+    Пример:
+    {
+        "id": 1,
+        "restaurant": 1,
+        "parent": null,
+        "name": "Напитки"
+    }
+    """
+    class Meta:
+        model = Category
+        fields = ['id', 'restaurant', 'parent', 'name', 'photo', 'items'] 

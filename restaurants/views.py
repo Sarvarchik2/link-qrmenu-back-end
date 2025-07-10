@@ -4,6 +4,7 @@ from .models import Restaurant
 from .serializers import RestaurantSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.exceptions import NotFound
 
 # Create your views here.
 
@@ -54,7 +55,11 @@ from rest_framework import viewsets
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsOwner]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsOwner()]
 
     def perform_create(self, serializer):
         serializer.save(restaurant=self.request.user.restaurant)
@@ -62,7 +67,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class MenuItemViewSet(viewsets.ModelViewSet):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
-    permission_classes = [IsOwner]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsOwner()]
 
     def perform_create(self, serializer):
         serializer.save()
@@ -77,6 +86,7 @@ class RestaurantMenuView(generics.RetrieveAPIView):
     serializer_class = CategorySerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'restaurant_slug'
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         operation_description="Получить меню ресторана (категории и блюда) по slug.",
@@ -84,10 +94,17 @@ class RestaurantMenuView(generics.RetrieveAPIView):
         tags=["Гость"]
     )
     def get(self, request, *args, **kwargs):
-        restaurant = Restaurant.objects.get(slug=kwargs['restaurant_slug'])
+        try:
+            restaurant = Restaurant.objects.get(slug=kwargs['restaurant_slug'])
+        except Restaurant.DoesNotExist:
+            raise NotFound("Ресторан не найден")
         categories = Category.objects.filter(restaurant=restaurant, parent=None)
         data = CategorySerializer(categories, many=True).data
-        return Response({'categories': data})
+        restaurant_data = RestaurantSerializer(restaurant).data
+        return Response({
+            'restaurant': restaurant_data,
+            'categories': data
+        })
 
 class RestaurantOrderCreateView(generics.CreateAPIView):
     """Оформление заказа гостем (POST /api/{restaurant_slug}/order/)."""
