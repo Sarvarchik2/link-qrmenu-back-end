@@ -40,7 +40,11 @@ class MenuItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'category', 'name', 'description', 'price', 'photo', 'is_hit', 'is_vegetarian']
 
 class CategorySerializer(serializers.ModelSerializer):
-    items = MenuItemSerializer(many=True, read_only=True)
+    items = serializers.SerializerMethodField()
+
+    def get_items(self, obj):
+        # Только блюда этой категории (и, соответственно, ресторана)
+        return MenuItemSerializer(obj.items.all(), many=True).data
 
     """
     Сериализатор для категории меню.

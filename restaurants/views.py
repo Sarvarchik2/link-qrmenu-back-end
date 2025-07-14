@@ -74,8 +74,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer.save(restaurant=self.request.user.restaurant)
 
 class MenuItemViewSet(viewsets.ModelViewSet):
-    queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'restaurant'):
+            # Только блюда ресторана владельца
+            return MenuItem.objects.filter(category__restaurant=user.restaurant)
+        # Для анонимных пользователей (например, Swagger) — пустой queryset
+        return MenuItem.objects.none()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

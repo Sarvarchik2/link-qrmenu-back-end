@@ -8,6 +8,7 @@ class Order(models.Model):
         ('new', 'Новый'),
         ('in_progress', 'В процессе'),
         ('done', 'Выполнен'),
+        ('cancelled', 'Отменен'),
     ]
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='orders')
     guest_name = models.CharField(max_length=255)
