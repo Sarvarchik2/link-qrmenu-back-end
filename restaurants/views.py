@@ -37,13 +37,22 @@ class IsOwner(permissions.BasePermission):
         return request.user.is_authenticated and request.user.role == 'owner'
 
     def has_object_permission(self, request, view, obj):
-        return hasattr(request.user, 'restaurant') and obj == request.user.restaurant
+        # Для Restaurant
+        if hasattr(obj, 'owner'):
+            return obj.owner == request.user
+        # Для Category
+        if hasattr(obj, 'restaurant'):
+            return obj.restaurant == request.user.restaurant
+        # Для MenuItem
+        if hasattr(obj, 'category') and hasattr(obj.category, 'restaurant'):
+            return obj.category.restaurant == request.user.restaurant
+        return False
 
 from rest_framework import generics
 from .models import Category, MenuItem
 from .serializers import CategorySerializer, MenuItemSerializer
 
-class RestaurantOwnerInfoView(generics.UpdateAPIView):
+class RestaurantOwnerInfoView(generics.RetrieveUpdateAPIView):
     serializer_class = RestaurantSerializer
     permission_classes = [IsOwner]
 
@@ -110,6 +119,7 @@ class RestaurantOrderCreateView(generics.CreateAPIView):
     """Оформление заказа гостем (POST /api/{restaurant_slug}/order/)."""
     serializer_class = OrderSerializer
     lookup_url_kwarg = 'restaurant_slug'
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         operation_description="Оформить заказ в ресторане по slug.",

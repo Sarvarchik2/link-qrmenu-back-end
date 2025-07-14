@@ -22,6 +22,9 @@ class OrderOwnerViewSet(viewsets.ModelViewSet):
     search_fields = ['status']
 
     def get_queryset(self):
+        # Для генерации схемы Swagger и для анонимных пользователей
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Order.objects.none()
         return Order.objects.filter(restaurant=self.request.user.restaurant)
 
     def perform_update(self, serializer):
