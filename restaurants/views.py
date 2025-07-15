@@ -62,8 +62,13 @@ class RestaurantOwnerInfoView(generics.RetrieveUpdateAPIView):
 from rest_framework import viewsets
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'restaurant'):
+            return Category.objects.filter(restaurant=user.restaurant)
+        return Category.objects.none()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
